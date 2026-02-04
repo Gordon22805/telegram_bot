@@ -1,5 +1,6 @@
 from aiogram import Router, types, F
 from aiogram.types import FSInputFile
+from pathlib import Path
 from aiogram.filters import Command
 from config import PRICES, MAX_QUANTITY, ADMIN_ID
 from keyboards import main_menu_kb, main_menu_reply_kb, region_kb, payment_choice_kb, crypto_invoice_kb, trc_paid_kb, profile_kb, topup_paid_kb
@@ -11,6 +12,8 @@ from utils.db import create_order, get_user_orders
 
 router = Router()
 
+ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+
 AMAZON_PRICES = {
     "USA": round(PRICES.get("USA", 0) + 5.0, 2),
     "TURKEY": round(PRICES.get("TURKEY", 0) + 7.0, 2),
@@ -20,20 +23,20 @@ PRODUCTS = {
     "Shopify": {
         "regions": ["USA", "TURKEY", "NETHERLANDS"],
         "prices": PRICES,
-        "image": r"assets\shopi.png",
+        "image": ASSETS_DIR / "shopi.png",
     },
     "Amazon": {
         "regions": ["USA", "TURKEY"],
         "prices": AMAZON_PRICES,
-        "image": r"assets\amazon.png",
+        "image": ASSETS_DIR / "amazon.png",
     },
 }
 
 # Region -> image path (Shopify only)
 REGION_IMAGES = {
-    "USA": r"assets\usa.png",
-    "TURKEY": r"assets\turkey.png",
-    "NETHERLANDS": r"assets\neth.png",
+    "USA": ASSETS_DIR / "usa.png",
+    "TURKEY": ASSETS_DIR / "turkey.png",
+    "NETHERLANDS": ASSETS_DIR / "neth.png",
 }
 
 # In-memory state dictionaries:
@@ -51,7 +54,7 @@ async def cmd_start(message: types.Message):
         "Verified accounts, full guarantees, and support for any escrow/guarantor to keep you safe.\n\n"
         "Use the menu below."
     )
-    photo = FSInputFile(r"assets\lightning.png")
+    photo = FSInputFile(str(ASSETS_DIR / "lightning.png"))
     await message.answer_photo(
         photo=photo,
         caption=caption,
@@ -68,7 +71,7 @@ async def cmd_profile(message: types.Message):
         "━━━━━━━━━━━━━━━━━━━━\n"
         "Use the button below."
     )
-    photo = FSInputFile(r"assets\users.png")
+    photo = FSInputFile(str(ASSETS_DIR / "users.png"))
     await message.answer_photo(
         photo=photo,
         caption=text,
@@ -81,7 +84,7 @@ async def cmd_profile(message: types.Message):
 async def cb_buy(callback: types.CallbackQuery):
     product = "Shopify"
     USER_STATE[callback.from_user.id] = {"stage": "choose_region", "product": product}
-    photo = FSInputFile(PRODUCTS[product]["image"])
+    photo = FSInputFile(str(PRODUCTS[product]["image"]))
     await callback.message.answer_photo(
         photo=photo,
         caption="Choose region:",
@@ -93,7 +96,7 @@ async def cb_buy(callback: types.CallbackQuery):
 async def msg_buy(message: types.Message):
     product = "Shopify"
     USER_STATE[message.from_user.id] = {"stage": "choose_region", "product": product}
-    photo = FSInputFile(PRODUCTS[product]["image"])
+    photo = FSInputFile(str(PRODUCTS[product]["image"]))
     await message.answer_photo(
         photo=photo,
         caption="Choose region:",
@@ -104,7 +107,7 @@ async def msg_buy(message: types.Message):
 async def msg_buy_amazon(message: types.Message):
     product = "Amazon"
     USER_STATE[message.from_user.id] = {"stage": "choose_region", "product": product}
-    photo = FSInputFile(PRODUCTS[product]["image"])
+    photo = FSInputFile(str(PRODUCTS[product]["image"]))
     await message.answer_photo(
         photo=photo,
         caption="Choose region:",
@@ -115,7 +118,7 @@ async def msg_buy_amazon(message: types.Message):
 async def msg_support(message: types.Message):
     user_id = message.from_user.id
     USER_STATE[user_id] = {"stage": "support_wait"}
-    photo = FSInputFile(r"assets\botik.png")
+    photo = FSInputFile(str(ASSETS_DIR / "botik.png"))
     await message.answer_photo(
         photo=photo,
         caption="Please type your message for support. It will be forwarded to admin."
@@ -153,7 +156,7 @@ async def cb_region(callback: types.CallbackQuery):
     image_path = REGION_IMAGES.get(region) or PRODUCTS.get(product, {}).get("image")
     if image_path:
         await callback.message.answer_photo(
-            photo=FSInputFile(image_path),
+            photo=FSInputFile(str(image_path)),
             caption=caption,
             parse_mode="HTML"
         )
@@ -219,7 +222,7 @@ async def quantity_message(message: types.Message):
     image_path = REGION_IMAGES.get(region) or PRODUCTS.get(product, {}).get("image")
     if image_path:
         await message.answer_photo(
-            photo=FSInputFile(image_path),
+            photo=FSInputFile(str(image_path)),
             caption=summary,
             parse_mode="HTML",
             reply_markup=payment_choice_kb()
@@ -393,7 +396,7 @@ async def cb_support(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     # mark that we expect the next message as support text
     USER_STATE[user_id] = {"stage": "support_wait"}
-    photo = FSInputFile(r"assets\botik.png")
+    photo = FSInputFile(str(ASSETS_DIR / "botik.png"))
     await callback.message.answer_photo(
         photo=photo,
         caption="Please type your message for support. It will be forwarded to admin."
